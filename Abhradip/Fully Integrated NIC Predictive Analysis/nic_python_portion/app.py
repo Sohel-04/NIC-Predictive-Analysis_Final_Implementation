@@ -13,13 +13,11 @@ api_url = "http://localhost:8080/auth/fetch-nic"  # Replace with your API endpoi
 response = requests.get(api_url)
 json_data = response.json()
 df1=pd.DataFrame(json_data)
-existing_df = pd.read_csv(csv_file)
-updated_df = pd.concat([existing_df, df1], ignore_index=True)
-updated_df.to_csv(csv_file, index=False)
+# existing_df = pd.read_csv(csv_file)
+# updated_df = pd.concat([existing_df, df1], ignore_index=True)
+# updated_df.to_csv(csv_file, index=False)
+df1.to_csv(csv_file, mode='a', index=False, header=False)
 
-# with open(csv_file, 'a',newline='') as f2:
-#     f2.write('\n')
-#     f2.write(original)
 
 # PostgreSQL connection parameters
 db_params = {
@@ -38,16 +36,17 @@ def load_data(filename):
         print(f"Error loading CSV file: {e}")
         return None
 
+
 def preprocess_data(df):
     try:
-        # Parse dates with format '%d-%m-%Y'
-        df['Demand_date'] = pd.to_datetime(df['Demand_date'], format='%d-%m-%Y')
+        df['Demand_date'] = pd.to_datetime(df['Demand_date'], format='%Y-%m-%d')
     except Exception as e:
         print(f"Error parsing dates: {e}")
         return None
     df.set_index('Demand_date', inplace=True)
     df.sort_index(inplace=True)
     return df
+
 
 def build_arima_model(series, order=(5, 1, 0)):
     model = ARIMA(series, order=order)
@@ -93,9 +92,6 @@ def get_forecast():
         # Forecast 12 steps ahead (adjust as needed)
         forecast_steps = 12
         forecast = forecast_sales(model, steps=forecast_steps)
-        
-        # Save forecast to database
-        save_forecast_to_db(forecast, series.index[-1])
         
         # Plotting the forecast
         sns.set(style="whitegrid")
